@@ -4,6 +4,7 @@ import vcf
 import re
 import argparse
 import string
+from random import randint
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -41,10 +42,25 @@ def nexus(input, output):
     vcf_reader = vcf.Reader(open(input, 'r'))
     sample_list = vcf_reader.samples
     sample_n = len(sample_list)
-    #list for loci for each sample, each locus is [allele,allele]
-    sample_concat = ['' for x in range(sample_n)]
-    #this produces concatenation of all snps per sample:
+    #list of contigs
+    contigs_list = []
     for line in vcf_reader:
+        contig_nr = line.CHROM
+        contig_nr = contig_nr.split('_')[2]
+        contig_nr = int(contig_nr)
+        contigs_list.append(contig_nr)
+    contigs_list = list(set(contigs_list))
+    contigs_n = len(contigs_list)
+    # print stats
+    print('Processing file with', contigs_n, 'contigs and', sample_n, 'individuals...')
+    #list for contigs, concat SNPs in each loci inside
+    samples = [{key: [] for key in contigs_list} for x in range(sample_n)]
+    #this produces concatenation of all snps per sample per contig, phased:
+    vcf_reader = vcf.Reader(open(input, 'r'))
+    for line in vcf_reader:
+        contig_nr = line.CHROM
+        contig_nr = contig_nr.split('_')[2]
+        contig_nr = int(contig_nr)
         sample_nr=0
         for sample in line.samples:
             genotype = sample.gt_bases
@@ -52,21 +68,32 @@ def nexus(input, output):
                 base1 = re.split('\W+', genotype)[0]
                 base2 = re.split('\W+', genotype)[1]
                 if base1==base2:
-                    sample_concat[sample_nr] += base1
+                    samples[sample_nr][contig_nr] += base1
                 else:
-                    sample_concat[sample_nr] += IUPAC[base1+base2]
+                    samples[sample_nr][contig_nr] += IUPAC[base1+base2]
             else:
-                sample_concat[sample_nr] += 'N'
+                samples[sample_nr][contig_nr] += 'N' 
             sample_nr += 1
+    #select single, unlinked SNP
+    loci_lengths=[len(samples[0][d]) for d in samples[0]]
+    random_snp=[randint(0,l-1) for l in loci_lengths]
+    samples_concat=[]
+    for sample_nr in range(sample_n):
+        concatenated=''
+        nr=0
+        for contig in samples[sample_nr]:
+            concatenated += samples[sample_nr][contig][random_snp[nr]]
+            nr += 1
+        samples_concat.append(concatenated)
     #print sample name and contatenated seq with IUPAC codes for heterozygotes
     output.write('#NEXUS\n')
     output.write('BEGIN DATA;\n')
-    output.write('  DIMENSIONS NTAX=%d NCHAR=%d;\n' % (sample_n, len(sample_concat[0])) )
+    output.write('  DIMENSIONS NTAX=%d NCHAR=%d;\n' % (sample_n, len(samples_concat[0])) )
     output.write('  FORMAT DATATYPE=DNA MISSING=N GAP=- INTERLEAVE=NO;\n')
     output.write('  MATRIX\n')
     max_width = len(max(sample_list, key=len))
     sample_nr = 0
-    for sample in sample_concat:
+    for sample in samples_concat:
         output.write('  ' + sample_list[sample_nr].ljust(max_width+2) + sample + '\n')
         sample_nr += 1
     output.write('    ;\n')
@@ -86,6 +113,8 @@ def fineRADstructure(input, output):
         contigs_list.append(contig_nr)
     contigs_list = list(set(contigs_list))
     contigs_n = len(contigs_list)
+    # print stats
+    print('Processing file with', contigs_n, 'contigs and', sample_n, 'individuals...')
     #list for contigs, concat SNPs in each loci inside
     contigs = {key: [['',''] for x in range(sample_n)] for key in contigs_list}
     #this produces concatenation of all snps per sample per contig, phased:
