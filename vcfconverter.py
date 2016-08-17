@@ -198,18 +198,15 @@ def fineRADstructure(input, output):
                 contigs[contig_nr][sample_nr][0] += re.split('\W+', genotype)[0]
                 contigs[contig_nr][sample_nr][1] += re.split('\W+', genotype)[1]
             else:
-                contigs[contig_nr][sample_nr][0] += ''
-                contigs[contig_nr][sample_nr][1] += '' 
+                contigs[contig_nr][sample_nr][0] += 'N'
+                contigs[contig_nr][sample_nr][1] += 'N' 
             sample_nr += 1
     #write output:
     output.write('\t'.join(map(str,sample_list)) + '\n') #samplenames
     for key in contigs.keys():
         contig_list = []
         for sample in contigs[key]:
-            if sample[0] == '' and sample[1] == '':
-                contig_list.append('')
-            else:
-                contig_list.append('/'.join(sample))
+            contig_list.append('/'.join(sample))
         output.write('\t'.join(map(str,contig_list)) + '\n')
 
 def main():
