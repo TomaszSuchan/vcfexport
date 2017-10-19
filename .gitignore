@@ -1,7 +1,7 @@
-test.vcf
+phased.vcf
 
-text.txt
+reference.fasta
 
-test.txt
+test.str
 
-text.csv
+unphased.vcf
