@@ -41,8 +41,8 @@ def parse_args():
     parser.add_argument('-t',
             type=str,
             dest='type',
-            choices=set(('fRs','structure','nexus','fasta','phylip')),
-            help='Output file type; supports fineRADstructure (fRs), structure, nexus fasta, and phylip format (two last with either all SNPs or random, unlinked SNPs).')
+            choices=set(('fRs', 'structure','nexus','fasta','phylip')),
+            help='Output file type; supports fine RAD structure, structure, nexus, fasta, and phylip format.')
     parser.add_argument('--all',
             dest="all",
             action="store_true",
